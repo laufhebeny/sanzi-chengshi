@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三词成诗 · Demo</title>
+<style>
+  :root{
+    --ink:#2c2a28;
+    --paper:#faf6ef;
+    --paper2:#f3ecdf;
+    --gold:#b8860b;
+    --gold2:#c9a227;
+    --muted:#8a8378;
+    --line:rgba(44,42,40,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    background:#e8e4dc;
+    display:flex;justify-content:center;align-items:center;
+    min-height:100vh;color:var(--ink);padding:20px 0;
+  }
+  .phone{
+    width:390px;max-width:100vw;height:820px;max-height:94vh;
+    background:var(--paper);border-radius:36px;
+    box-shadow:0 20px 60px rgba(0,0,0,.18);
+    position:relative;overflow:hidden;display:flex;flex-direction:column;
+  }
+  .screen{display:none;flex:1;flex-direction:column;position:relative;animation:fade .35s ease;}
+  .screen.active{display:flex;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* 首页 */
+  .home{padding:48px 28px 20px;}
+  .brand{font-size:13px;letter-spacing:3px;color:var(--muted);text-align:center;}
+  .slogan{font-family:"STKaiti","KaiTi","Songti SC",serif;font-size:26px;text-align:center;margin:14px 0 6px;letter-spacing:2px;}
+  .slogan b{color:var(--gold);font-weight:400;}
+  .sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:34px;}
+  .words{display:flex;flex-direction:column;gap:14px;}
+  .word-input{
+    background:transparent;border:none;border-bottom:1px solid var(--line);
+    font-size:22px;font-family:"STKaiti","KaiTi","Songti SC",serif;
+    text-align:center;padding:12px 4px;color:var(--ink);outline:none;
+    transition:border-color .2s;
+  }
+  .word-input:focus{border-bottom-color:var(--gold);}
+  .word-input::placeholder{color:#c6bfae;font-size:18px;}
+  .tags{margin:22px 0 0;display:flex;gap:8px;overflow-x:auto;padding:4px 2px;scrollbar-width:none;}
+  .tags::-webkit-scrollbar{display:none;}
+  .tag{
+    flex:0 0 auto;font-size:13px;color:var(--muted);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;background:transparent;cursor:pointer;transition:.15s;
+  }
+  .tag:hover{color:var(--gold);border-color:var(--gold);}
+  .btn{
+    margin-top:26px;background:var(--ink);color:var(--paper);border:none;border-radius:14px;
+    padding:16px;font-size:16px;letter-spacing:6px;cursor:pointer;width:100%;
+    font-family:inherit;transition:.2s;
+  }
+  .btn:hover{background:#1c1a18;}
+  .quota{text-align:center;font-size:12px;color:var(--muted);margin-top:14px;}
+  .quota b{color:var(--gold);font-weight:500;}
+
+  /* 生成中 */
+  .loading{align-items:center;justify-content:center;gap:22px;}
+  .loading .orb{width:64px;height:64px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--gold);animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading p{font-family:"STKaiti","KaiTi",serif;font-size:15px;color:var(--muted);letter-spacing:2px;}
+
+  /* 诗页 */
+  .poem{padding:0;}
+  .art{height:250px;position:relative;overflow:hidden;}
+  .art-title{position:absolute;top:30px;left:0;right:0;text-align:center;font-size:12px;letter-spacing:10px;font-family:"STKaiti","KaiTi",serif;opacity:.75;}
+  .art-bird{position:absolute;right:40px;top:62px;opacity:.7;}
+  .art .seal{position:absolute;right:18px;bottom:14px;width:26px;height:26px;border-radius:3px;color:#fff;font-family:"STKaiti","KaiTi",serif;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:.92;}
+  .art svg{position:absolute;left:0;bottom:-2px;width:100%;}
+  .poem-body{flex:1;display:flex;flex-direction:column;padding:20px 24px 10px;align-items:center;}
+  .verse{
+    font-family:"STKaiti","KaiTi","Songti SC",serif;
+    writing-mode:vertical-rl;height:250px;font-size:16px;letter-spacing:4px;
+    color:var(--ink);line-height:1.9;margin:0 auto;
+  }
+  .date-line{font-family:"STKaiti","KaiTi",serif;font-size:12px;color:var(--muted);letter-spacing:2px;margin-top:14px;}
+  .styles{display:flex;gap:8px;margin-top:16px;}
+  .style-chip{
+    font-size:12px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);
+    color:var(--muted);background:transparent;cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .style-chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .actions{display:flex;gap:12px;margin-top:16px;width:100%;}
+  .act{
+    flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);
+    background:transparent;font-size:14px;color:var(--ink);cursor:pointer;font-family:inherit;transition:.15s;
+  }
+  .act:hover{border-color:var(--gold);color:var(--gold);}
+  .act.primary{background:var(--gold2);border-color:var(--gold2);color:#fff;letter-spacing:3px;}
+  .act.primary:hover{background:var(--gold);}
+
+  /* 诗集 */
+  .list{padding:40px 24px 20px;}
+  .list h2{font-family:"STKaiti","KaiTi",serif;font-size:22px;letter-spacing:3px;text-align:center;margin-bottom:22px;font-weight:400;}
+  .empty{text-align:center;color:var(--muted);font-size:14px;margin-top:60px;line-height:2;}
+  .poem-item{
+    border-bottom:1px solid var(--line);padding:16px 4px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .poem-item .meta{font-size:12px;color:var(--muted);}
+  .poem-item .txt{font-family:"STKaiti","KaiTi",serif;font-size:15px;margin-top:6px;color:var(--ink);white-space:pre-line;}
+  .poem-item .del{font-size:12px;color:#c0b8a8;cursor:pointer;padding:6px;}
+
+  /* 设置 */
+  .settings{padding:48px 28px 20px;}
+  .settings h2{font-family:"STKaiti","KaiTi",serif;font-size:22px;letter-spacing:3px;text-align:center;margin-bottom:30px;font-weight:400;}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:18px 4px;border-bottom:1px solid var(--line);}
+  .row .lab{font-size:15px;}
+  .row .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .switch{position:relative;width:48px;height:28px;background:#d9d2c2;border-radius:999px;cursor:pointer;transition:.2s;border:none;}
+  .switch.on{background:var(--gold2);}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch.on::after{transform:translateX(20px);}
+
+  /* 底部 tab */
+  .tabbar{display:flex;border-top:1px solid var(--line);background:var(--paper2);}
+  .tab{
+    flex:1;padding:14px 0 20px;text-align:center;font-size:13px;color:var(--muted);
+    cursor:pointer;font-family:inherit;border:none;background:transparent;letter-spacing:1px;transition:.15s;
+  }
+  .tab.on{color:var(--ink);font-weight:500;}
+
+  /* toast */
+  .toast{
+    position:absolute;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);
+    background:rgba(44,42,40,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;
+    opacity:0;pointer-events:none;transition:.25s;white-space:nowrap;z-index:9;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- 首页 -->
+  <div class="screen active" id="home">
+    <div class="home">
+      <div class="brand">每 日 一 首</div>
+      <div class="slogan">三字成诗</div>
+      <div class="sub">写下此时的三个字，换一首属于此刻的诗</div>
+      <div class="words">
+        <input class="word-input" id="w1" placeholder="第一个字" maxlength="8">
+        <input class="word-input" id="w2" placeholder="第二个字" maxlength="8">
+        <input class="word-input" id="w3" placeholder="第三个字" maxlength="8">
+      </div>
+      <div class="tags" id="tags"></div>
+      <button class="btn" id="go">写 一 首</button>
+      <div class="quota">今日剩余 <b id="quotaNum">1</b> 次 · 会员不限</div>
+    </div>
+  </div>
+
+  <!-- 生成中 -->
+  <div class="screen loading" id="loading">
+    <div class="orb"></div>
+    <p id="loadingText">正在研磨你的三个词…</p>
+  </div>
+
+  <!-- 诗页 -->
+  <div class="screen" id="poem">
+    <div class="poem">
+      <div class="art" id="art"><div class="moon"></div><svg id="mounts" viewBox="0 0 390 120" preserveAspectRatio="none"></svg></div>
+      <div class="poem-body">
+        <div class="verse" id="verse"></div>
+        <div class="date-line" id="dateLine"></div>
+        <div class="styles" id="styles"></div>
+        <div class="actions">
+          <button class="act" id="again">换一首</button>
+          <button class="act" id="save">收藏</button>
+          <button class="act primary" id="share">分享</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 诗集 -->
+  <div class="screen" id="list">
+    <div class="list">
+      <h2>我的诗集</h2>
+      <div id="listBody"></div>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="screen" id="settings">
+    <div class="settings">
+      <h2>设 置</h2>
+      <div class="row">
+        <div><div class="lab">每日提醒</div><div class="hint">每天早上 7:30 提醒你写诗</div></div>
+        <button class="switch" id="remindSwitch"></button>
+      </div>
+      <div class="row">
+        <div><div class="lab">关于</div><div class="hint">三词成诗 · Demo v0.1</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="tabbar">
+    <button class="tab on" data-tab="home">写诗</button>
+    <button class="tab" data-tab="list">诗集</button>
+    <button class="tab" data-tab="settings">设置</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var STYLES = ["古风","现代","治愈","励志"];
+  var TEMPLATES = {
+    "古风":[
+      ["{w1}是隔岸的灯","{w2}是灯下的旧船","{w3}是船要去的渡口","而渡口，早已被雪埋了"],
+      ["有{w1}，也有{w2}","还要{w3}做什么","不如温一壶薄酒","问风，风只是摇头"],
+      ["把{w1}折成一只舟","把{w2}叠成一支桨","载满一船{w3}","划进月亮的背面"],
+      ["{w1}落进{w2}","惊起一滩{w3}","我以为是故人","原来，只是风过"],
+      ["若{w1}是山","{w2}便是山间的雾","{w3}是雾散之后","那一步，终究没跨出"]
+    ],
+    "现代":[
+      ["我把{w1}放在{w2}上","{w3}就停在那里","像一只没醒的鸟","等天，自己亮起来"],
+      ["今天只有{w1}和{w2}","{w3}在别处下雨","我们隔着一场雨","谁，也没有先开口"],
+      ["{w1}是旧的，{w2}是新的","{w3}刚刚好","就像你推门进来","带来半个下午的光"],
+      ["路过{w1}，想起{w2}","至于{w3}","已经不重要了","风，会替我记得"],
+      ["{w1}之后是{w2}","{w2}之后是{w3}","那之后呢","那之后，就全都是你"]
+    ],
+    "治愈":[
+      ["没关系的","{w1}会慢慢变成{w2}","{w2}又会变成{w3}","而你，什么都不用变"],
+      ["今天的{w1}很好","{w2}也很好","连{w3}都刚刚好","所以，你也很好"],
+      ["把{w1}放轻一点","把{w2}放慢一点","{w3}会自己赶上来","像猫，在门口等你"],
+      ["{w1}还没有来","{w2}也还没有来","那就先看看{w3}吧","它在，就等于都在"],
+      ["如果{w1}累了","就到{w2}里歇一歇","{w3}不着急","我们还有一整个冬天"]
+    ],
+    "励志":[
+      ["带着{w1}出发","把{w2}揣进怀里","{w3}就在前面","只是别跑太快，路会疼"],
+      ["{w1}不是借口","{w2}也不是终点","{w3}，才是要去的地方","也是你，终将回去的地方"],
+      ["别怕{w1}","{w2}会替你挡着","{w3}会替你亮着","你只管，慢慢走"],
+      ["若{w1}拦住去路","就带着{w2}绕过去","{w3}在山顶","也在你的鞋底"],
+      ["愿{w1}如约","愿{w2}不散","愿{w3}可期","若都不成，愿你平安"]
+    ]
+  };
+  var PALETTES = [
+    {bg:["#f7f4ec","#e9ede4"],a:"#5fae94",b:"#9ecf9e",c:"#d94f35",ink:"#4a4a45"},
+    {bg:["#faf3ea","#f2e6d8"],a:"#e0904f",b:"#8fb98f",c:"#c2452f",ink:"#4a4640"},
+    {bg:["#eef3f6","#dde8ee"],a:"#6f9ab8",b:"#9dbfd4",c:"#e8a06b",ink:"#454a50"},
+    {bg:["#f3f1f5","#e6e3ee"],a:"#8f86b8",b:"#b8b3d4",c:"#d4788a",ink:"#474450"}
+  ];
+  var FILLERS = ["正在研磨你的三个词…","正在铺开一张纸…","正在蘸墨…","正在等风来…"];
+
+  var words = ["","",""];
+  var curStyle = "古风";
+  var curPoem = "";
+
+  var $ = function(id){return document.getElementById(id);};
+  function today(){var d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+  function quota(){
+    var k="poem_quota_"+today();
+    var v=localStorage.getItem(k);
+    return v===null?1:parseInt(v,10);
+  }
+  function setQuota(n){localStorage.setItem("poem_quota_"+today(),n);$("quotaNum").textContent=Math.max(0,n);}
+  function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},1800);}
+
+  // 心情标签
+  var TAGS=["清晨","咖啡","远方","想念","焦虑","加班","期待","回家","海","山"];
+  var tagWrap=$("tags");
+  TAGS.forEach(function(t){
+    var b=document.createElement("button");b.className="tag";b.textContent=t;
+    b.onclick=function(){
+      var inputs=[$("w1"),$("w2"),$("w3")];
+      var empty=inputs.filter(function(i){return !i.value;});
+      if(empty.length){empty[0].value=t;empty[0].focus();}else{toast("三个词已满，可换掉其中一个");}
+    };
+    tagWrap.appendChild(b);
+  });
+
+  // 生成
+  function pick(arr,n){var a=arr.slice();var r=[];while(r.length<n&&a.length){r.push(a.splice(Math.floor(Math.random()*a.length),1)[0]);}return r;}
+  function buildPoem(style){
+    var w=words.map(function(x){return x||"此刻";});
+    var sk=pick(TEMPLATES[style],1)[0];
+    return sk.map(function(l){return l.replace("{w1}",w[0]).replace("{w2}",w[1]).replace("{w3}",w[2]);}).join("\n");
+  }
+  function renderArt(){
+    var p=PALETTES[Math.floor(Math.random()*PALETTES.length)];
+    var art=$("art");
+    art.style.background="linear-gradient(180deg,"+p.bg[0]+" 0%,"+p.bg[1]+" 100%)";
+    var u=Math.random().toString(36).slice(2,7);
+    art.innerHTML=
+      '<svg viewBox="0 0 390 250" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:100%">'+
+      '<defs>'+
+        '<linearGradient id="wa'+u+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="'+p.a+'"/><stop offset=".55" stop-color="'+p.b+'"/><stop offset="1" stop-color="'+p.c+'"/></linearGradient>'+
+        '<linearGradient id="wb'+u+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="'+p.b+'"/><stop offset=".5" stop-color="'+p.a+'"/><stop offset="1" stop-color="'+p.c+'"/></linearGradient>'+
+        '<linearGradient id="wc'+u+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="'+p.c+'"/><stop offset=".6" stop-color="'+p.b+'"/><stop offset="1" stop-color="'+p.a+'"/></linearGradient>'+
+        '<filter id="s1'+u+'" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>'+
+        '<filter id="s2'+u+'" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="12"/></filter>'+
+      '</defs>'+
+      '<path d="M60 128 Q140 70 220 116 Q300 156 390 94 L390 250 L0 250 L0 140 Z" fill="'+p.a+'" opacity=".16" filter="url(#s2'+u+')"/>'+
+      '<path d="M0 166 Q70 126 150 150 Q240 178 320 138 Q360 120 390 128 L390 250 L0 250 Z" fill="url(#wa'+u+')" opacity=".42" filter="url(#s1'+u+')"/>'+
+      '<path d="M0 190 Q80 148 170 174 Q260 198 340 156 Q370 142 390 148 L390 250 L0 250 Z" fill="url(#wb'+u+')" opacity=".62" filter="url(#s1'+u+')"/>'+
+      '<path d="M0 214 Q90 176 180 198 Q270 216 390 174 L390 250 L0 250 Z" fill="url(#wc'+u+')" opacity=".82" filter="url(#s1'+u+')"/>'+
+      '<ellipse cx="195" cy="148" rx="230" ry="26" fill="'+p.bg[0]+'" opacity=".55" filter="url(#s2'+u+')"/>'+
+      '</svg>'+
+      '<div class="art-title" style="color:'+p.ink+'">三 字 成 诗</div>'+
+      '<div class="art-bird" style="color:'+p.ink+'"><svg viewBox="0 0 60 20" width="52"><path d="M4 12 q8 -10 16 0 q8 -10 16 0 q8 -10 16 0" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>'+
+      '<div class="seal" style="background:'+p.c+'">诗</div>';
+  }
+  function renderPoem(){
+    curPoem=buildPoem(curStyle);
+    $("verse").textContent=curPoem;
+    var d=new Date();
+    var week="日一二三四五六"[d.getDay()];
+    $("dateLine").textContent=d.getMonth()+1+" 月 "+d.getDate()+" 日 · 星期"+week+" · "+words.filter(Boolean).join(" / ");
+    renderArt();
+  }
+  function renderStyles(){
+    var w=$("styles");w.innerHTML="";
+    STYLES.forEach(function(s){
+      var b=document.createElement("button");b.className="style-chip"+(s===curStyle?" on":"");b.textContent=s;
+      b.onclick=function(){curStyle=s;renderStyles();renderPoem();};
+      w.appendChild(b);
+    });
+  }
+
+  $("go").onclick=function(){
+    words=[$("w1").value.trim(),$("w2").value.trim(),$("w3").value.trim()];
+    if(words.every(function(x){return !x;})){toast("先写下至少一个词吧");return;}
+    showScreen("loading");
+    $("loadingText").textContent=FILLERS[Math.floor(Math.random()*FILLERS.length)];
+    setTimeout(function(){
+      renderStyles();renderPoem();
+      var q=quota()-1;setQuota(q);
+      if(q<0){toast("今日免费次数已用完 · 会员可无限");}
+      showScreen("poem");
+    },1300);
+  };
+
+  $("again").onclick=function(){renderPoem();toast("换了一首");};
+  $("save").onclick=function(){
+    var list=JSON.parse(localStorage.getItem("poems")||"[]");
+    list.unshift({date:today(),words:words.filter(Boolean).join(" / "),text:curPoem});
+    localStorage.setItem("poems",JSON.stringify(list));
+    toast("已收藏到诗集");
+  };
+  $("share").onclick=function(){
+    var txt="我用三个词「"+words.filter(Boolean).join("、")+"」写了一首诗：\n"+curPoem.replace(/\n/g,"，")+"\n——来自「三词成诗」";
+    if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){toast("分享文案已复制");});}
+    else{toast("分享文案已准备好");}
+  };
+
+  function renderList(){
+    var list=JSON.parse(localStorage.getItem("poems")||"[]");
+    var body=$("listBody");
+    if(!list.length){body.innerHTML='<div class="empty">还没有诗。<br>去写一首吧。</div>';return;}
+    body.innerHTML="";
+    list.forEach(function(p,i){
+      var d=document.createElement("div");d.className="poem-item";
+      d.innerHTML='<div><div class="meta">'+p.date+" · "+p.words+'</div><div class="txt">'+p.text+'</div></div><span class="del" data-i="'+i+'">删除</span>';
+      body.appendChild(d);
+    });
+    body.querySelectorAll(".del").forEach(function(el){
+      el.onclick=function(){
+        var list=JSON.parse(localStorage.getItem("poems")||"[]");
+        list.splice(parseInt(el.dataset.i,10),1);
+        localStorage.setItem("poems",JSON.stringify(list));
+        renderList();toast("已删除");
+      };
+    });
+  }
+
+  var remindKey="poem_remind";
+  function renderRemind(){
+    var on=localStorage.getItem(remindKey)==="1";
+    $("remindSwitch").classList.toggle("on",on);
+  }
+  $("remindSwitch").onclick=function(){
+    var on=localStorage.getItem(remindKey)==="1";
+    localStorage.setItem(remindKey,on?"0":"1");
+    renderRemind();toast(on?"提醒已关闭":"每天 7:30 提醒你");
+  };
+
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+    $(id).classList.add("active");
+    document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("on",t.dataset.tab===id);});
+  }
+  document.querySelectorAll(".tab").forEach(function(t){
+    t.onclick=function(){
+      showScreen(t.dataset.tab);
+      if(t.dataset.tab==="list")renderList();
+    };
+  });
+
+  setQuota(quota());
+  renderRemind();
+})();
+</script>
+</body>
+</html>
